@@ -1,4 +1,4 @@
-.PHONY: clean pull build deploy production reload
+.PHONY: clean shutdown pull build deploy reload
 
 clean:
 	rm -rf build
@@ -9,13 +9,13 @@ pull:
 build:
 	./gradlew --no-daemon publishImageToLocalRegistry
 
-deploy: pull build
+shutdown:
 	docker-compose down
+
+deploy: shutdown pull build
 	docker-compose up chess-server
 
-reload:
-	docker-compose down
+reload: shutdown
 	docker-compose up -d
 
-production: clean pull deploy
 .DEFAULT_GOAL := production
