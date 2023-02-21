@@ -4,7 +4,6 @@ import com.github.bhlangonijr.chesslib.Board
 import dev.mcd.chess.auth.user.UserId
 import dev.mcd.chess.game.model.GameSession
 import dev.mcd.chess.game.model.SessionId
-import io.ktor.server.plugins.BadRequestException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.sync.Mutex
 import java.util.UUID
@@ -19,9 +18,15 @@ class LobbyImpl(private val sessionManager: SessionManager) : Lobby {
 
     override suspend fun awaitSession(userId: UserId): SessionId {
         lock.lock()
-        if (waitingUsers.any { it.first == userId }) {
-            throw BadRequestException("Already in lobby")
+        println("Locked for $userId")
+
+        // Check if already in lobby and wait
+        waitingUsers.firstOrNull { it.first == userId }?.let { (_, completable) ->
+            lock.unlock()
+            return completable.await()
         }
+
+        // Check if anyone else is waiting and make match
         waitingUsers.removeFirstOrNull()?.let { (otherUser, otherCompletable) ->
             val sessionId = UUID.randomUUID().toString()
             val white = if (Math.random() > 0.5) otherUser else userId
@@ -36,6 +41,8 @@ class LobbyImpl(private val sessionManager: SessionManager) : Lobby {
             lock.unlock()
             return sessionId
         }
+
+        // We're sad and alone, wait for someone else
         val completable = CompletableDeferred<SessionId>()
         waitingUsers += userId to completable
         lock.unlock()
