@@ -1,0 +1,12 @@
+server {
+    listen      443 ssl;
+
+    ssl_certificate     /etc/letsencrypt/live/chess.mcd.dev/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/chess.mcd.dev/privkey.pem;
+
+    client_max_body_size    50M;
+
+    location / {
+        proxy_pass      http://localhost:8080;
+    }
+}
