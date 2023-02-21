@@ -13,7 +13,7 @@ shutdown:
 	docker-compose down
 
 deploy: shutdown pull build
-	docker-compose up chess-server
+	docker-compose up
 
 reload: shutdown
 	docker-compose up -d

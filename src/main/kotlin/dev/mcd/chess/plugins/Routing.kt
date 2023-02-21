@@ -13,6 +13,7 @@ import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.authentication
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.response.respond
+import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
@@ -26,6 +27,9 @@ fun Application.configureRouting() {
     val lobby = get<Lobby>()
 
     routing {
+        get("/debugversion") {
+            call.respond("0")
+        }
         post("/generate_id") {
             val id = users.new()
 
@@ -50,7 +54,6 @@ fun Application.configureRouting() {
                     }
                 }
             }
-
         }
     }
 }
