@@ -1,0 +1,11 @@
+version: '3.3'
+
+services:
+  app:
+    image: chess-server
+    environment:
+      SECRET: ${SECRET}
+      JWT_DOMAIN: ${JWT_DOMAIN}
+    ports:
+      - "8080:8080"
+    restart: always

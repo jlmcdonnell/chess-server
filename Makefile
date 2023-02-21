@@ -7,7 +7,7 @@ pull:
 	git pull
 
 build:
-	./gradlew --no-daemon installDist
+	./gradlew --no-daemon publishImageToLocalRegistry
 
 deploy: pull build
 	docker-compose down
