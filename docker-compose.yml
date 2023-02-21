@@ -2,7 +2,7 @@ version: '3.3'
 
 services:
   app:
-    image: chess-server
+    image: chess-server:latest
     environment:
       SECRET: ${SECRET}
       JWT_DOMAIN: ${JWT_DOMAIN}
