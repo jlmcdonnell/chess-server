@@ -11,7 +11,7 @@ build:
 
 deploy: pull build
 	docker-compose down
-	docker-compose up --build -d
+	docker-compose up chess-server
 
 reload:
 	docker-compose down
