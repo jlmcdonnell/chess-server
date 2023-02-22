@@ -25,4 +25,5 @@ fun Application.module() {
     configureSockets()
     configureStatusPages()
     configureRouting()
+    configureDebugEnvironment()
 }

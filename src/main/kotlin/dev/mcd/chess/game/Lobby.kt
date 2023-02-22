@@ -1,9 +1,7 @@
 package dev.mcd.chess.game
 
 import com.github.bhlangonijr.chesslib.Board
-import dev.mcd.chess.auth.user.UserId
-import dev.mcd.chess.game.model.GameSession
-import dev.mcd.chess.game.model.SessionId
+import dev.mcd.chess.auth.UserId
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.sync.Mutex
 import java.util.UUID
@@ -13,6 +11,7 @@ interface Lobby {
 }
 
 class LobbyImpl(private val sessionManager: SessionManager) : Lobby {
+
     private var waitingUsers = mutableListOf<Pair<UserId, CompletableDeferred<SessionId>>>()
     private val lock = Mutex()
 

@@ -1,4 +1,4 @@
-package dev.mcd.chess.auth.user
+package dev.mcd.chess.auth
 
 import java.security.SecureRandom
 

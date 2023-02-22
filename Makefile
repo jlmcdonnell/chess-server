@@ -13,7 +13,7 @@ shutdown:
 	docker-compose down
 
 deploy: shutdown pull build
-	docker-compose up
+	docker-compose up -d
 
 reload: shutdown
 	docker-compose up -d
