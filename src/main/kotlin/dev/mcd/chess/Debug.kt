@@ -6,7 +6,7 @@ import com.github.bhlangonijr.chesslib.Board
 import dev.mcd.chess.auth.LiveUsers
 import dev.mcd.chess.game.SessionManager
 import dev.mcd.chess.game.GameSession
-import dev.mcd.chess.game.State
+import dev.mcd.chess.game.SessionState
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.response.respond
@@ -30,7 +30,7 @@ fun Application.configureDebugEnvironment() {
                     playerWhite = "user1",
                     playerBlack = "user2",
                     board = Board(),
-                    state = State.STARTED,
+                    state = SessionState.STARTED,
                 )
             )
         }

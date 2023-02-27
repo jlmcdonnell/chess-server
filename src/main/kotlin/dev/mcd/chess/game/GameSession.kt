@@ -9,10 +9,10 @@ data class GameSession(
     val playerWhite: UserId,
     val playerBlack: UserId,
     val board: Board,
-    val state: State = State.STARTED,
+    val state: SessionState = SessionState.STARTED,
 )
 
-enum class State {
+enum class SessionState {
     STARTED,
     DRAW,
     WHITE_RESIGNED,

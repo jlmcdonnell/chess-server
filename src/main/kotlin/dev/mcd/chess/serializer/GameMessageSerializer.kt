@@ -15,6 +15,7 @@ data class GameMessage(
 enum class MessageType {
     SessionInfo,
     ErrorNotUsersMove,
+    ErrorGameTerminated,
     ErrorInvalidMove,
 }
 

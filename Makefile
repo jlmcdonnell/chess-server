@@ -4,7 +4,7 @@ clean:
 	rm -rf build
 
 pull:
-	git pull
+	git fetch && git reset --hard origin master
 
 build:
 	./gradlew --no-daemon publishImageToLocalRegistry
@@ -18,4 +18,4 @@ deploy: shutdown pull build
 reload: shutdown
 	docker-compose up -d
 
-.DEFAULT_GOAL := production
+.DEFAULT_GOAL := deploy

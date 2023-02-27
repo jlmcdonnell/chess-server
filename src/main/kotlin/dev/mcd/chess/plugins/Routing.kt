@@ -3,21 +3,15 @@ package dev.mcd.chess.plugins
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.github.bhlangonijr.chesslib.Side
-import com.github.bhlangonijr.chesslib.move.Move
 import dev.mcd.chess.Environment
 import dev.mcd.chess.auth.LiveUsers
 import dev.mcd.chess.auth.UserId
 import dev.mcd.chess.game.CommandHandler
 import dev.mcd.chess.game.Lobby
 import dev.mcd.chess.game.SessionManager
-import dev.mcd.chess.game.State
 import dev.mcd.chess.serializer.AuthSerializer
-import dev.mcd.chess.serializer.GameMessage
-import dev.mcd.chess.serializer.MessageType.ErrorInvalidMove
-import dev.mcd.chess.serializer.MessageType.ErrorNotUsersMove
 import dev.mcd.chess.serializer.sessionInfoMessage
 import dev.mcd.chess.serializer.sessionInfoSerializer
-import io.ktor.serialization.kotlinx.json.DefaultJson
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.auth.authenticate
@@ -36,7 +30,6 @@ import io.ktor.websocket.readText
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.ktor.ext.get
-import java.util.logging.Logger
 
 fun Application.configureRouting() {
     val users = get<LiveUsers>()
@@ -76,6 +69,7 @@ fun Application.configureRouting() {
             }
 
             webSocket("/game/join/{sessionId}") {
+
                 val sessionId = call.parameters["sessionId"] ?: throw BadRequestException("No session provided")
                 var session = sessionManager.session(id = sessionId)
                 val userId = call.authentication.principal<JWTPrincipal>()!!.jwtId!!
@@ -88,8 +82,9 @@ fun Application.configureRouting() {
                         val message = commandHandler.handleCommand(session, command, userSide)
                         message?.let { sendSerialized(message) }
                     }
+                    val closeReason = closeReason.await()
+                    println("Closed: $closeReason")
                 }
-
                 sessionManager.updates(sessionId).collectLatest {
                     session = it
                     sendSerialized(session.sessionInfoMessage())
