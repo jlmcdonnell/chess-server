@@ -28,13 +28,17 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.sendSerialized
+import io.ktor.server.websocket.timeout
 import io.ktor.server.websocket.webSocket
+import io.ktor.websocket.CloseReason
 import io.ktor.websocket.Frame
+import io.ktor.websocket.close
 import io.ktor.websocket.readText
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.koin.ktor.ext.get
+import java.time.Duration
 
 fun Application.configureRouting() {
     val users = get<LiveUsers>()
@@ -59,18 +63,28 @@ fun Application.configureRouting() {
         }
         authenticate {
             route("/game") {
-
-                get("/session/{sessionId}") {
+                get("/game/id/{sessionId}") {
                     val sessionId = call.parameters["sessionId"] ?: throw BadRequestException("No session provided")
                     val session = sessionManager.getGame(id = sessionId)
                     call.respond(session.sessionInfoSerializer())
                 }
-                post("/find") {
-                    val userId = call.authentication.principal<JWTPrincipal>()!!.jwtId as UserId
-                    val sessionId = lobby.awaitSession(userId)
-                    val session = sessionManager.getGame(sessionId)
-                    call.respond(session.sessionInfoSerializer())
+            }
+
+            webSocket("/game/find") {
+                val userId = call.authentication.principal<JWTPrincipal>()!!.jwtId!!
+                timeout = Duration.ofSeconds(15)
+                launch {
+                    try {
+                        val sessionId = lobby.awaitSession(userId)
+                        val session = sessionManager.getGame(sessionId)
+                        sendSerialized(session.sessionInfoMessage())
+                        close(CloseReason(CloseReason.Codes.NORMAL, "Joined Session"))
+                    } finally {
+                        lobby.leave(userId)
+                    }
                 }
+                closeReason.await()
+                lobby.leave(userId)
             }
 
             webSocket("/game/join/{sessionId}") {

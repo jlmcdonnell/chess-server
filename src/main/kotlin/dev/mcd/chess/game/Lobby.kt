@@ -4,10 +4,12 @@ import com.github.bhlangonijr.chesslib.Board
 import dev.mcd.chess.auth.UserId
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.UUID
 
 interface Lobby {
     suspend fun awaitSession(userId: UserId): GameId
+    suspend fun leave(userId: UserId)
 }
 
 class LobbyImpl(private val sessionManager: GameManager) : Lobby {
@@ -46,5 +48,13 @@ class LobbyImpl(private val sessionManager: GameManager) : Lobby {
         waitingUsers += userId to completable
         lock.unlock()
         return completable.await()
+    }
+
+    override suspend fun leave(userId: UserId) {
+        lock.withLock {
+            waitingUsers.removeIf { (user, completable) ->
+                (user == userId).also { completable.cancel() }
+            }
+        }
     }
 }
