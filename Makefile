@@ -4,7 +4,7 @@ clean:
 	rm -rf build
 
 pull:
-	git fetch && git reset --hard origin master
+	git fetch && git reset --hard origin/master
 
 build:
 	./gradlew --no-daemon publishImageToLocalRegistry

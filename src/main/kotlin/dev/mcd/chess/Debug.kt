@@ -4,7 +4,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.github.bhlangonijr.chesslib.Board
 import dev.mcd.chess.auth.LiveUsers
-import dev.mcd.chess.game.SessionManager
+import dev.mcd.chess.game.GameManager
 import dev.mcd.chess.game.GameSession
 import dev.mcd.chess.game.SessionState
 import io.ktor.server.application.Application
@@ -17,7 +17,7 @@ import org.koin.ktor.ext.get
 
 fun Application.configureDebugEnvironment() {
     if (System.getenv("DEBUG") != null) {
-        val sessionManager = get<SessionManager>()
+        val sessionManager = get<GameManager>()
         val users = get<LiveUsers>()
 
         users.add("user1")

@@ -7,15 +7,15 @@ import kotlinx.coroutines.sync.Mutex
 import java.util.UUID
 
 interface Lobby {
-    suspend fun awaitSession(userId: UserId): SessionId
+    suspend fun awaitSession(userId: UserId): GameId
 }
 
-class LobbyImpl(private val sessionManager: SessionManager) : Lobby {
+class LobbyImpl(private val sessionManager: GameManager) : Lobby {
 
-    private var waitingUsers = mutableListOf<Pair<UserId, CompletableDeferred<SessionId>>>()
+    private var waitingUsers = mutableListOf<Pair<UserId, CompletableDeferred<GameId>>>()
     private val lock = Mutex()
 
-    override suspend fun awaitSession(userId: UserId): SessionId {
+    override suspend fun awaitSession(userId: UserId): GameId {
         lock.lock()
         println("Locked for $userId")
 
@@ -42,7 +42,7 @@ class LobbyImpl(private val sessionManager: SessionManager) : Lobby {
         }
 
         // We're sad and alone, wait for someone else
-        val completable = CompletableDeferred<SessionId>()
+        val completable = CompletableDeferred<GameId>()
         waitingUsers += userId to completable
         lock.unlock()
         return completable.await()

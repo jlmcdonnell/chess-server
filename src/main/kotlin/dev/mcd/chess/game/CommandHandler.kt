@@ -4,7 +4,8 @@ import com.github.bhlangonijr.chesslib.Side
 import com.github.bhlangonijr.chesslib.move.Move
 import dev.mcd.chess.serializer.GameMessage
 import dev.mcd.chess.serializer.MessageType
-import java.lang.Exception
+import dev.mcd.chess.serializer.moveHistoryMessage
+import dev.mcd.chess.serializer.moveMessage
 
 interface CommandHandler {
     suspend fun handleCommand(
@@ -15,7 +16,7 @@ interface CommandHandler {
 }
 
 class CommandHandlerImpl(
-    private val sessionManager: SessionManager
+    private val sessionManager: GameManager
 ) : CommandHandler {
     override suspend fun handleCommand(
         session: GameSession,
@@ -23,31 +24,33 @@ class CommandHandlerImpl(
         userSide: Side,
     ): GameMessage? {
         println("command: $command")
-        var newSession = session
 
         try {
-            if (newSession.state != SessionState.STARTED) {
+            if (session.state != SessionState.STARTED) {
                 return GameMessage(MessageType.ErrorGameTerminated)
             } else if (command == "resign") {
                 sessionManager.update(session.copy(state = SessionState.resigned(userSide)))
+            } else if (command == "history") {
+                return session.moveHistoryMessage()
             } else if (userSide == session.board.sideToMove) {
                 val board = session.board
                 val move = Move(command, session.board.sideToMove)
                 if (board.doMove(move, true)) {
-                    if (board.isMated) {
-                        newSession = session.copy(state = SessionState.checkmated(userSide.flip()))
+                    val newState = if (board.isMated) {
+                        SessionState.checkmated(userSide.flip())
                     } else if (board.isDraw) {
-                        newSession = session.copy(state = SessionState.DRAW)
+                        SessionState.DRAW
+                    } else null
+                    newState?.let {
+                        sessionManager.update(session.copy(state = newState))
                     }
-                    println("new fen=${board.fen}")
                 } else {
                     return GameMessage(MessageType.ErrorInvalidMove)
                 }
-                sessionManager.update(newSession)
             } else {
                 return GameMessage(MessageType.ErrorNotUsersMove)
             }
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             println("handling command: $e")
             e.printStackTrace()
         }

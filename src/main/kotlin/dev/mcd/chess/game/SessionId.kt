@@ -1,3 +1,3 @@
 package dev.mcd.chess.game
 
-typealias SessionId = String
+typealias GameId = String

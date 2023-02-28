@@ -2,14 +2,18 @@ package dev.mcd.chess.plugins
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.github.bhlangonijr.chesslib.BoardEventListener
+import com.github.bhlangonijr.chesslib.BoardEventType
 import com.github.bhlangonijr.chesslib.Side
+import com.github.bhlangonijr.chesslib.move.Move
 import dev.mcd.chess.Environment
 import dev.mcd.chess.auth.LiveUsers
 import dev.mcd.chess.auth.UserId
 import dev.mcd.chess.game.CommandHandler
+import dev.mcd.chess.game.GameManager
 import dev.mcd.chess.game.Lobby
-import dev.mcd.chess.game.SessionManager
 import dev.mcd.chess.serializer.AuthSerializer
+import dev.mcd.chess.serializer.moveMessage
 import dev.mcd.chess.serializer.sessionInfoMessage
 import dev.mcd.chess.serializer.sessionInfoSerializer
 import io.ktor.server.application.Application
@@ -29,12 +33,13 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.koin.ktor.ext.get
 
 fun Application.configureRouting() {
     val users = get<LiveUsers>()
     val lobby = get<Lobby>()
-    val sessionManager = get<SessionManager>()
+    val sessionManager = get<GameManager>()
     val commandHandler = get<CommandHandler>()
 
     routing {
@@ -57,21 +62,20 @@ fun Application.configureRouting() {
 
                 get("/session/{sessionId}") {
                     val sessionId = call.parameters["sessionId"] ?: throw BadRequestException("No session provided")
-                    val session = sessionManager.session(id = sessionId)
+                    val session = sessionManager.getGame(id = sessionId)
                     call.respond(session.sessionInfoSerializer())
                 }
                 post("/find") {
                     val userId = call.authentication.principal<JWTPrincipal>()!!.jwtId as UserId
                     val sessionId = lobby.awaitSession(userId)
-                    val session = sessionManager.session(sessionId)
+                    val session = sessionManager.getGame(sessionId)
                     call.respond(session.sessionInfoSerializer())
                 }
             }
 
             webSocket("/game/join/{sessionId}") {
-
                 val sessionId = call.parameters["sessionId"] ?: throw BadRequestException("No session provided")
-                var session = sessionManager.session(id = sessionId)
+                var session = sessionManager.getGame(id = sessionId)
                 val userId = call.authentication.principal<JWTPrincipal>()!!.jwtId!!
                 val userSide = if (userId == session.playerWhite) Side.WHITE else Side.BLACK
 
@@ -85,7 +89,20 @@ fun Application.configureRouting() {
                     val closeReason = closeReason.await()
                     println("Closed: $closeReason")
                 }
-                sessionManager.updates(sessionId).collectLatest {
+
+                launch {
+                    val listener = BoardEventListener {
+                        it as Move
+                        launch {
+                            sendSerialized(it.moveMessage())
+                        }
+                    }
+                    session.board.addEventListener(BoardEventType.ON_MOVE, listener)
+                    closeReason.await()
+                    session.board.removeEventListener(BoardEventType.ON_MOVE, listener)
+                }
+
+                sessionManager.getGameUpdates(sessionId).collectLatest {
                     session = it
                     sendSerialized(session.sessionInfoMessage())
                 }
