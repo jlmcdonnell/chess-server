@@ -10,12 +10,15 @@ import java.util.UUID
 interface Lobby {
     suspend fun awaitSession(userId: UserId): GameId
     suspend fun leave(userId: UserId)
+    fun count(): Int
 }
 
 class LobbyImpl(private val sessionManager: GameManager) : Lobby {
 
     private var waitingUsers = mutableListOf<Pair<UserId, CompletableDeferred<GameId>>>()
     private val lock = Mutex()
+
+    override fun count(): Int = waitingUsers.size
 
     override suspend fun awaitSession(userId: UserId): GameId {
         lock.lock()

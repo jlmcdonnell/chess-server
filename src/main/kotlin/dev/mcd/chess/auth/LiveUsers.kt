@@ -16,7 +16,9 @@ class LiveUsersImpl : LiveUsers {
     override fun new(): UserId {
         var id: String
         do {
-            id = "${WordList.random()}-${WordList.random()}"
+            val word1 = WordList.random().replaceFirstChar { it.uppercaseChar() }
+            val word2 = WordList.random().replaceFirstChar { it.uppercaseChar() }
+            id = "$word1$word2"
         } while (exists(id))
         users += id
         return id

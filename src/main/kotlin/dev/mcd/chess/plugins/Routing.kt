@@ -8,11 +8,11 @@ import com.github.bhlangonijr.chesslib.Side
 import com.github.bhlangonijr.chesslib.move.Move
 import dev.mcd.chess.Environment
 import dev.mcd.chess.auth.LiveUsers
-import dev.mcd.chess.auth.UserId
 import dev.mcd.chess.game.CommandHandler
 import dev.mcd.chess.game.GameManager
 import dev.mcd.chess.game.Lobby
 import dev.mcd.chess.serializer.AuthSerializer
+import dev.mcd.chess.serializer.LobbyInfoSerializer
 import dev.mcd.chess.serializer.moveMessage
 import dev.mcd.chess.serializer.sessionInfoMessage
 import dev.mcd.chess.serializer.sessionInfoSerializer
@@ -34,7 +34,6 @@ import io.ktor.websocket.CloseReason
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readText
-import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.ktor.ext.get
@@ -61,6 +60,10 @@ fun Application.configureRouting() {
 
             call.respond(AuthSerializer(token = token, userId = id))
         }
+        get("/game/lobby") {
+            call.respond(LobbyInfoSerializer(lobby.count()))
+        }
+
         authenticate {
             route("/game") {
                 get("/game/id/{sessionId}") {
