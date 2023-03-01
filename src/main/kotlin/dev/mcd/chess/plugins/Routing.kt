@@ -11,6 +11,7 @@ import dev.mcd.chess.auth.LiveUsers
 import dev.mcd.chess.game.CommandHandler
 import dev.mcd.chess.game.GameManager
 import dev.mcd.chess.game.Lobby
+import dev.mcd.chess.game.SessionState
 import dev.mcd.chess.serializer.AuthSerializer
 import dev.mcd.chess.serializer.LobbyInfoSerializer
 import dev.mcd.chess.serializer.moveMessage
@@ -42,7 +43,7 @@ import java.time.Duration
 fun Application.configureRouting() {
     val users = get<LiveUsers>()
     val lobby = get<Lobby>()
-    val sessionManager = get<GameManager>()
+    val gameManager = get<GameManager>()
     val commandHandler = get<CommandHandler>()
 
     routing {
@@ -66,10 +67,17 @@ fun Application.configureRouting() {
 
         authenticate {
             route("/game") {
-                get("/game/id/{sessionId}") {
+                get("/id/{sessionId}") {
                     val sessionId = call.parameters["sessionId"] ?: throw BadRequestException("No session provided")
-                    val session = sessionManager.getGame(id = sessionId)
+                    val session = gameManager.getGame(id = sessionId)
                     call.respond(session.sessionInfoSerializer())
+                }
+                get("/user") {
+                    val userId = call.authentication.principal<JWTPrincipal>()!!.jwtId!!
+                    val games = gameManager.getActiveGamesForUser(userId)
+                        .filter { it.state == SessionState.STARTED }
+                        .map { it.sessionInfoSerializer() }
+                    call.respond(games)
                 }
             }
 
@@ -79,7 +87,7 @@ fun Application.configureRouting() {
                 launch {
                     try {
                         val sessionId = lobby.awaitSession(userId)
-                        val session = sessionManager.getGame(sessionId)
+                        val session = gameManager.getGame(sessionId)
                         sendSerialized(session.sessionInfoMessage())
                         close(CloseReason(CloseReason.Codes.NORMAL, "Joined Session"))
                     } finally {
@@ -92,7 +100,7 @@ fun Application.configureRouting() {
 
             webSocket("/game/join/{sessionId}") {
                 val sessionId = call.parameters["sessionId"] ?: throw BadRequestException("No session provided")
-                var session = sessionManager.getGame(id = sessionId)
+                var session = gameManager.getGame(id = sessionId)
                 val userId = call.authentication.principal<JWTPrincipal>()!!.jwtId!!
                 val userSide = if (userId == session.playerWhite) Side.WHITE else Side.BLACK
 
@@ -119,7 +127,7 @@ fun Application.configureRouting() {
                     session.board.removeEventListener(BoardEventType.ON_MOVE, listener)
                 }
 
-                sessionManager.getGameUpdates(sessionId).collectLatest {
+                gameManager.getGameUpdates(sessionId).collectLatest {
                     session = it
                     sendSerialized(session.sessionInfoMessage())
                 }

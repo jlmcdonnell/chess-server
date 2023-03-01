@@ -1,5 +1,6 @@
 package dev.mcd.chess.game
 
+import dev.mcd.chess.auth.UserId
 import io.ktor.server.plugins.NotFoundException
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
@@ -11,6 +12,7 @@ import kotlinx.coroutines.sync.withLock
 interface GameManager {
     fun getGameUpdates(id: GameId): Flow<GameSession>
     fun getGame(id: GameId): GameSession
+    fun getActiveGamesForUser(userId: UserId): List<GameSession>
     suspend fun add(game: GameSession)
     suspend fun remove(game: GameSession)
     suspend fun update(game: GameSession)
@@ -45,6 +47,12 @@ class SessionManagerImpl : GameManager {
 
     override fun getGame(id: GameId): GameSession {
         return sessions[id] ?: throw NotFoundException("Session with ID $id not found")
+    }
+
+    override fun getActiveGamesForUser(userId: UserId): List<GameSession> {
+        return sessions.filterValues {
+            it.playerBlack == userId || it.playerWhite == userId
+        }.mapNotNull { it.value }
     }
 
     override suspend fun update(game: GameSession) {
