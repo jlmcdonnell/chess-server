@@ -1,36 +1,36 @@
 package dev.mcd.chess.game
 
-import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.Side
-import dev.mcd.chess.auth.UserId
+import com.github.bhlangonijr.chesslib.game.Game
+import com.github.bhlangonijr.chesslib.game.GameResult
+import com.github.bhlangonijr.chesslib.game.Termination
+import com.github.bhlangonijr.chesslib.move.MoveList
 
 data class GameSession(
-    val sessionId: String,
-    val playerWhite: UserId,
-    val playerBlack: UserId,
-    val board: Board,
-    val state: SessionState = SessionState.STARTED,
+    val id: GameId,
+    val game: Game,
 )
 
-enum class SessionState {
-    STARTED,
-    DRAW,
-    WHITE_RESIGNED,
-    BLACK_RESIGNED,
-    WHITE_CHECKMATED,
-    BLACK_CHECKMATED;
+val GameSession.isTerminated get() = game.result != GameResult.ONGOING
 
-    companion object {
-        fun checkmated(side: Side) = if (side == Side.WHITE) {
-            WHITE_CHECKMATED
-        } else {
-            BLACK_CHECKMATED
-        }
+fun GameSession.resignForSide(side: Side) {
+    game.result = if (side == Side.WHITE) GameResult.BLACK_WON else GameResult.WHITE_WON
+    game.termination = Termination.NORMAL
+}
 
-        fun resigned(side: Side) = if (side == Side.WHITE) {
-            WHITE_RESIGNED
-        } else {
-            BLACK_RESIGNED
-        }
-    }
+fun GameSession.updateResultAndTermination(side: Side): Boolean {
+    if (game.board.isMated) {
+        if (side == Side.WHITE) GameResult.WHITE_WON else GameResult.BLACK_WON
+        game.termination = Termination.NORMAL
+        return true
+    } else if (game.board.isDraw) {
+        GameResult.DRAW
+        game.termination = Termination.NORMAL
+        return true
+    } else GameResult.ONGOING
+    return false
+}
+
+fun GameSession.toPgn(): String {
+    return game.toPgn(false, false)
 }

@@ -1,6 +1,5 @@
 package dev.mcd.chess.serializer
 
-import com.github.bhlangonijr.chesslib.move.Move
 import dev.mcd.chess.game.GameSession
 import io.ktor.serialization.kotlinx.json.DefaultJson
 import kotlinx.serialization.Serializable
@@ -14,26 +13,23 @@ data class GameMessage(
 
 @Serializable
 enum class MessageType {
-    SessionInfo,
-    MoveHistory,
+    GameState,
     Move,
     ErrorNotUsersMove,
     ErrorGameTerminated,
     ErrorInvalidMove,
 }
 
-fun Move.moveMessage() = GameMessage(MessageType.Move, DefaultJson.encodeToString(MoveSerializer(toString())))
-
-fun GameSession.sessionInfoMessage(): GameMessage {
+fun String.moveMessage(count: Int): GameMessage {
     return GameMessage(
-        message = MessageType.SessionInfo,
-        content = DefaultJson.encodeToString(sessionInfoSerializer())
+        message = MessageType.Move,
+        content = DefaultJson.encodeToString(MoveSerializer(move = this, count = count))
     )
 }
 
-fun GameSession.moveHistoryMessage(): GameMessage {
+fun GameSession.gameStateMessage(): GameMessage {
     return GameMessage(
-        message = MessageType.MoveHistory,
-        content = DefaultJson.encodeToString(moveHistorySerializer())
+        message = MessageType.GameState,
+        content = DefaultJson.encodeToString(gameInfoSerializer())
     )
 }

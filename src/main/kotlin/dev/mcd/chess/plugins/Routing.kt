@@ -2,21 +2,19 @@ package dev.mcd.chess.plugins
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.github.bhlangonijr.chesslib.BoardEventListener
-import com.github.bhlangonijr.chesslib.BoardEventType
 import com.github.bhlangonijr.chesslib.Side
-import com.github.bhlangonijr.chesslib.move.Move
 import dev.mcd.chess.Environment
 import dev.mcd.chess.auth.LiveUsers
 import dev.mcd.chess.game.CommandHandler
+import dev.mcd.chess.game.CommandResult
 import dev.mcd.chess.game.GameManager
 import dev.mcd.chess.game.Lobby
-import dev.mcd.chess.game.SessionState
+import dev.mcd.chess.game.isTerminated
 import dev.mcd.chess.serializer.AuthSerializer
 import dev.mcd.chess.serializer.LobbyInfoSerializer
+import dev.mcd.chess.serializer.gameInfoSerializer
+import dev.mcd.chess.serializer.gameStateMessage
 import dev.mcd.chess.serializer.moveMessage
-import dev.mcd.chess.serializer.sessionInfoMessage
-import dev.mcd.chess.serializer.sessionInfoSerializer
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.auth.authenticate
@@ -35,7 +33,9 @@ import io.ktor.websocket.CloseReason
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readText
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.ktor.ext.get
 import java.time.Duration
@@ -70,13 +70,13 @@ fun Application.configureRouting() {
                 get("/id/{sessionId}") {
                     val sessionId = call.parameters["sessionId"] ?: throw BadRequestException("No session provided")
                     val session = gameManager.getGame(id = sessionId)
-                    call.respond(session.sessionInfoSerializer())
+                    call.respond(session.gameInfoSerializer())
                 }
                 get("/user") {
                     val userId = call.authentication.principal<JWTPrincipal>()!!.jwtId!!
                     val games = gameManager.getActiveGamesForUser(userId)
-                        .filter { it.state == SessionState.STARTED }
-                        .map { it.sessionInfoSerializer() }
+                        .filter { !it.isTerminated }
+                        .map { it.gameInfoSerializer() }
                     call.respond(games)
                 }
             }
@@ -88,7 +88,7 @@ fun Application.configureRouting() {
                     try {
                         val sessionId = lobby.awaitSession(userId)
                         val session = gameManager.getGame(sessionId)
-                        sendSerialized(session.sessionInfoMessage())
+                        sendSerialized(session.gameStateMessage())
                         close(CloseReason(CloseReason.Codes.NORMAL, "Joined Session"))
                     } finally {
                         lobby.leave(userId)
@@ -99,38 +99,45 @@ fun Application.configureRouting() {
             }
 
             webSocket("/game/join/{sessionId}") {
-                val sessionId = call.parameters["sessionId"] ?: throw BadRequestException("No session provided")
-                var session = gameManager.getGame(id = sessionId)
+                val id = call.parameters["sessionId"] ?: throw BadRequestException("No session provided")
+                var session = gameManager.getGame(id = id)
                 val userId = call.authentication.principal<JWTPrincipal>()!!.jwtId!!
-                val userSide = if (userId == session.playerWhite) Side.WHITE else Side.BLACK
+                val userSide = if (userId == session.game.whitePlayer.id) Side.WHITE else Side.BLACK
 
                 launch {
                     for (frame in incoming) {
                         frame as? Frame.Text ?: continue
                         val command = frame.readText().trim()
-                        val message = commandHandler.handleCommand(session, command, userSide)
-                        message?.let { sendSerialized(message) }
-                    }
-                    val closeReason = closeReason.await()
-                    println("Closed: $closeReason")
-                }
-
-                launch {
-                    val listener = BoardEventListener {
-                        it as Move
-                        launch {
-                            sendSerialized(it.moveMessage())
+                        println("Command: $command")
+                        val result = commandHandler.handleCommand(session, command, userSide)
+                        if (result is CommandResult.MessageReply) {
+                            println("Reply: ${result.message.message}")
+                            sendSerialized(result.message)
+                        } else {
+                            println("(No Reply)")
                         }
                     }
-                    session.board.addEventListener(BoardEventType.ON_MOVE, listener)
-                    closeReason.await()
-                    session.board.removeEventListener(BoardEventType.ON_MOVE, listener)
                 }
 
-                gameManager.getGameUpdates(sessionId).collectLatest {
-                    session = it
-                    sendSerialized(session.sessionInfoMessage())
+                val gameUpdateJob = launch(Dispatchers.Default) {
+                    gameManager.getGameUpdates(id).collectLatest {
+                        session = it
+                        sendSerialized(session.gameStateMessage())
+                    }
                 }
+
+                val moveJob = launch(Dispatchers.Default) {
+                    gameManager.getMoves(id).collectLatest {
+                        println("Sending $it to $userId (active=$isActive) close=$closeReason")
+                        sendSerialized(it.toString().moveMessage(session.game.board.moveCounter))
+                    }
+                }
+
+                val closeReason = closeReason.await()
+                println("Closed ($closeReason)")
+
+                gameUpdateJob.cancel()
+                moveJob.cancel()
             }
         }
     }

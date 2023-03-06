@@ -1,11 +1,9 @@
 package dev.mcd.chess.game
 
-import com.github.bhlangonijr.chesslib.Board
 import dev.mcd.chess.auth.UserId
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.util.UUID
 
 interface Lobby {
     suspend fun awaitSession(userId: UserId): GameId
@@ -13,7 +11,10 @@ interface Lobby {
     fun count(): Int
 }
 
-class LobbyImpl(private val sessionManager: GameManager) : Lobby {
+class LobbyImpl(
+    private val sessionManager: GameManager,
+    private val gameFactory: GameFactory,
+) : Lobby {
 
     private var waitingUsers = mutableListOf<Pair<UserId, CompletableDeferred<GameId>>>()
     private val lock = Mutex()
@@ -32,18 +33,11 @@ class LobbyImpl(private val sessionManager: GameManager) : Lobby {
 
         // Check if anyone else is waiting and make match
         waitingUsers.removeFirstOrNull()?.let { (otherUser, otherCompletable) ->
-            val sessionId = UUID.randomUUID().toString()
-            val white = if (Math.random() > 0.5) otherUser else userId
-            val session = GameSession(
-                sessionId = sessionId,
-                playerWhite = white,
-                playerBlack = if (otherUser == white) userId else otherUser,
-                board = Board(),
-            )
+            val session = gameFactory.generateGame(otherUser, userId)
             sessionManager.add(session)
-            otherCompletable.complete(session.sessionId)
+            otherCompletable.complete(session.id)
             lock.unlock()
-            return sessionId
+            return session.id
         }
 
         // We're sad and alone, wait for someone else

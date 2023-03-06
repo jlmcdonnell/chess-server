@@ -1,3 +1,4 @@
+import com.google.common.util.concurrent.Uninterruptibles
 import io.ktor.plugin.features.DockerImageRegistry
 import io.ktor.plugin.features.JreVersion
 
@@ -30,6 +31,10 @@ repositories {
     maven { url = uri("https://jitpack.io") }
 }
 
+tasks.test {
+    useJUnitPlatform()
+}
+
 dependencies {
     val ktorVersion = "2.2.3"
 
@@ -45,4 +50,8 @@ dependencies {
     implementation("io.insert-koin:koin-ktor:3.3.1")
     implementation("ch.qos.logback:logback-classic:1.2.11")
     implementation("com.github.bhlangonijr:chesslib:1.3.3")
+
+    testImplementation(enforcedPlatform("org.junit:junit-bom:5.9.2")) // JUnit 5 BOM
+    testImplementation("org.junit.jupiter:junit-jupiter")
+
 }
