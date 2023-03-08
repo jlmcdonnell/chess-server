@@ -20,11 +20,12 @@ fun GameSession.resignForSide(side: Side) {
 
 fun GameSession.updateResultAndTermination(side: Side): Boolean {
     if (game.board.isMated) {
-        if (side == Side.WHITE) GameResult.WHITE_WON else GameResult.BLACK_WON
+        game.result = if (side == Side.WHITE) GameResult.WHITE_WON else GameResult.BLACK_WON
         game.termination = Termination.NORMAL
         return true
     } else if (game.board.isDraw) {
         GameResult.DRAW
+        game.result = GameResult.DRAW
         game.termination = Termination.NORMAL
         return true
     } else GameResult.ONGOING
@@ -32,5 +33,5 @@ fun GameSession.updateResultAndTermination(side: Side): Boolean {
 }
 
 fun GameSession.toPgn(): String {
-    return game.toPgn(false, false)
+    return game.toPgn(true, true)
 }

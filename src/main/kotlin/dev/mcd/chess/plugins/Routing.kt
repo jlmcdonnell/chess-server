@@ -107,14 +107,18 @@ fun Application.configureRouting() {
                 launch {
                     for (frame in incoming) {
                         frame as? Frame.Text ?: continue
-                        val command = frame.readText().trim()
-                        println("Command: $command")
-                        val result = commandHandler.handleCommand(session, command, userSide)
-                        if (result is CommandResult.MessageReply) {
-                            println("Reply: ${result.message.message}")
-                            sendSerialized(result.message)
-                        } else {
-                            println("(No Reply)")
+                        runCatching {
+                            val command = frame.readText().trim()
+                            println("Command: $command")
+                            val result = commandHandler.handleCommand(session, command, userSide)
+                            if (result is CommandResult.MessageReply) {
+                                println("Reply: ${result.message.message}")
+                                sendSerialized(result.message)
+                            } else {
+                                println("(No Reply)")
+                            }
+                        }.onFailure {
+                            it.printStackTrace()
                         }
                     }
                 }

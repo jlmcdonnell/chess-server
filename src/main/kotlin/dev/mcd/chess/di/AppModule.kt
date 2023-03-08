@@ -9,13 +9,13 @@ import dev.mcd.chess.game.GameFactoryImpl
 import dev.mcd.chess.game.GameManager
 import dev.mcd.chess.game.Lobby
 import dev.mcd.chess.game.LobbyImpl
-import dev.mcd.chess.game.SessionManagerImpl
+import dev.mcd.chess.game.GameManagerImpl
 import org.koin.dsl.module
 
 val appModule = module {
     single<Lobby> { LobbyImpl(get(), get()) }
     single<LiveUsers> { LiveUsersImpl() }
-    single<GameManager> { SessionManagerImpl() }
+    single<GameManager> { GameManagerImpl() }
     single<CommandHandler> { CommandHandlerImpl(get()) }
     single<GameFactory> { GameFactoryImpl() }
 }

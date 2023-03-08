@@ -37,6 +37,7 @@ class CommandHandlerImpl(
             CommandResult.MessageReply(session.gameStateMessage())
         } else if (userSide == session.game.board.sideToMove) {
             val board = session.game.board
+
             val move = Move(command, session.game.board.sideToMove)
             if (board.doMove(move, true)) {
                 session.game.halfMoves.add(move)

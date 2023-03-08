@@ -30,7 +30,7 @@ interface GameManager {
     suspend fun notifyUpdate(session: GameSession)
 }
 
-class SessionManagerImpl : GameManager {
+class GameManagerImpl : GameManager {
 
     private val sessions = hashMapOf<GameId, GameSession>()
     private val lock = Mutex()
