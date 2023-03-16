@@ -8,7 +8,7 @@ import kotlinx.coroutines.sync.withLock
 interface Lobby {
     suspend fun awaitSession(userId: UserId): GameId
     suspend fun leave(userId: UserId)
-    fun count(): Int
+    fun count(filter: UserId? = null): Int
 }
 
 class LobbyImpl(
@@ -19,7 +19,7 @@ class LobbyImpl(
     private var waitingUsers = mutableListOf<Pair<UserId, CompletableDeferred<GameId>>>()
     private val lock = Mutex()
 
-    override fun count(): Int = waitingUsers.size
+    override fun count(filter: UserId?): Int = waitingUsers.size - waitingUsers.count { it.first == filter }
 
     override suspend fun awaitSession(userId: UserId): GameId {
         lock.lock()

@@ -62,7 +62,8 @@ fun Application.configureRouting() {
             call.respond(AuthSerializer(token = token, userId = id))
         }
         get("/game/lobby") {
-            call.respond(LobbyInfoSerializer(lobby.count()))
+            val userId = call.authentication.principal<JWTPrincipal>()?.jwtId
+            call.respond(LobbyInfoSerializer(lobby.count(userId)))
         }
 
         authenticate {
