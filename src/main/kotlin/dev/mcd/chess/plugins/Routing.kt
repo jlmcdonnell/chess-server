@@ -62,7 +62,8 @@ fun Application.configureRouting() {
             call.respond(AuthSerializer(token = token, userId = id))
         }
         get("/game/lobby") {
-            val userId = call.authentication.principal<JWTPrincipal>()?.jwtId
+            val userId = call.request.queryParameters["excludeUser"]
+            println("exclude user: $userId")
             call.respond(LobbyInfoSerializer(lobby.count(userId)))
         }
 

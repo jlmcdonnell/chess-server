@@ -19,7 +19,16 @@ class LobbyImpl(
     private var waitingUsers = mutableListOf<Pair<UserId, CompletableDeferred<GameId>>>()
     private val lock = Mutex()
 
-    override fun count(filter: UserId?): Int = waitingUsers.size - waitingUsers.count { it.first == filter }
+    override fun count(filter: UserId?): Int {
+        val totalSize = waitingUsers.size
+        return if (filter == null) {
+            totalSize
+        } else {
+            totalSize - waitingUsers.count { (userId, _) ->
+                userId == filter
+            }
+        }
+    }
 
     override suspend fun awaitSession(userId: UserId): GameId {
         lock.lock()
