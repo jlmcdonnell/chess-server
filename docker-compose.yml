@@ -9,4 +9,6 @@ services:
       PUZZLES_DB_PATH: ${PUZZLES_DB_PATH}
     ports:
       - "8080:8080"
+    volumes:
+      - ./puzzles:/puzzles
     restart: always
