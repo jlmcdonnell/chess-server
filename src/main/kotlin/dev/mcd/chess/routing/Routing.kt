@@ -1,4 +1,4 @@
-package dev.mcd.chess.plugins
+package dev.mcd.chess.routing
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -66,6 +66,8 @@ fun Application.configureRouting() {
             println("exclude user: $userId")
             call.respond(LobbyInfoSerializer(lobby.count(userId)))
         }
+
+        puzzles()
 
         authenticate {
             route("/game") {

@@ -6,6 +6,7 @@ services:
     environment:
       SECRET: ${SECRET}
       JWT_DOMAIN: ${JWT_DOMAIN}
+      PUZZLES_DB_PATH: ${PUZZLES_DB_PATH}
     ports:
       - "8080:8080"
     restart: always

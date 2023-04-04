@@ -50,6 +50,10 @@ dependencies {
     implementation("io.insert-koin:koin-ktor:3.3.1")
     implementation("ch.qos.logback:logback-classic:1.2.11")
     implementation("com.github.bhlangonijr:chesslib:1.3.3")
+    implementation("org.jetbrains.exposed:exposed-core:0.41.1")
+    implementation("org.jetbrains.exposed:exposed-dao:0.41.1")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.41.1")
+    implementation("org.xerial:sqlite-jdbc:3.41.2.1")
 
     testImplementation(enforcedPlatform("org.junit:junit-bom:5.9.2")) // JUnit 5 BOM
     testImplementation("org.junit.jupiter:junit-jupiter")

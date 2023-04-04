@@ -1,11 +1,12 @@
 package dev.mcd.chess
 
 import dev.mcd.chess.di.configureKoin
-import dev.mcd.chess.plugins.configureRouting
+import dev.mcd.chess.routing.configureRouting
 import dev.mcd.chess.plugins.configureSecurity
 import dev.mcd.chess.plugins.configureSerialization
 import dev.mcd.chess.plugins.configureSockets
 import dev.mcd.chess.plugins.configureStatusPages
+import dev.mcd.chess.puzzles.db.configurePuzzlesDatabase
 import io.ktor.server.application.Application
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -21,5 +22,6 @@ fun Application.module() {
     configureSerialization()
     configureSockets()
     configureStatusPages()
+    configurePuzzlesDatabase()
     configureRouting()
 }

@@ -10,6 +10,8 @@ import dev.mcd.chess.game.GameManager
 import dev.mcd.chess.game.Lobby
 import dev.mcd.chess.game.LobbyImpl
 import dev.mcd.chess.game.GameManagerImpl
+import dev.mcd.chess.puzzles.PuzzleRepository
+import dev.mcd.chess.puzzles.PuzzleRepositoryImpl
 import org.koin.dsl.module
 
 val appModule = module {
@@ -18,4 +20,5 @@ val appModule = module {
     single<GameManager> { GameManagerImpl() }
     single<CommandHandler> { CommandHandlerImpl(get()) }
     single<GameFactory> { GameFactoryImpl() }
+    single<PuzzleRepository> { PuzzleRepositoryImpl() }
 }
