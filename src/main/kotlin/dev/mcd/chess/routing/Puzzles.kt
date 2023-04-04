@@ -17,7 +17,7 @@ fun Routing.puzzles() {
         call.respond(puzzle.serializer())
     }
 
-    get("/puzzles/{id}") {
+    get("/puzzles/id/{id}") {
         val id = call.parameters["id"] ?: throw BadRequestException("Invalid puzzle ID")
         val puzzle = puzzleRepo.getPuzzle(id)
         call.respond(puzzle.serializer())
