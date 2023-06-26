@@ -2,16 +2,40 @@ package dev.mcd.chess.puzzles
 
 import dev.mcd.chess.puzzles.db.Puzzles
 import dev.mcd.chess.puzzles.db.toPuzzle
-import org.jetbrains.exposed.sql.Random
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.selectAll
+import kotlinx.coroutines.runBlocking
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import kotlin.math.max
+import kotlin.math.min
 
 class PuzzleRepositoryImpl : PuzzleRepository {
 
-    override suspend fun getRandomPuzzle(): Puzzle {
+    private val allPuzzleRange: IntRange
+
+    init {
+        val minRange = Puzzles.selectAll()
+            .orderBy(Puzzles.rating, SortOrder.DESC)
+            .limit(1)
+            .first()
+            .toPuzzle().rating
+
+        val maxRange = Puzzles.selectAll()
+            .orderBy(Puzzles.rating, SortOrder.ASC)
+            .limit(1)
+            .first()
+            .toPuzzle().rating
+
+        allPuzzleRange = minRange..maxRange
+    }
+
+    override suspend fun getRandomPuzzle(ratingMin: Int, ratingMax: Int): Puzzle {
+        val adjustedMin = max(allPuzzleRange.first, ratingMin)
+        val adjustedMax = min(allPuzzleRange.last, ratingMax)
+
         return transaction {
             Puzzles.selectAll()
+                .andWhere { Puzzles.rating greaterEq adjustedMin }
+                .andWhere { Puzzles.rating lessEq adjustedMax }
                 .orderBy(Random())
                 .limit(1)
                 .first()

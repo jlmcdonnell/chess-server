@@ -13,7 +13,9 @@ fun Routing.puzzles() {
     val puzzleRepo = get<PuzzleRepository>()
 
     get("/puzzles/random") {
-        val puzzle = puzzleRepo.getRandomPuzzle()
+        val ratingMin = call.request.queryParameters["ratingMin"]?.toInt() ?: 0
+        val ratingMax = call.request.queryParameters["ratingMax"]?.toInt() ?: 0
+        val puzzle = puzzleRepo.getRandomPuzzle(ratingMin, ratingMax)
         call.respond(puzzle.serializer())
     }
 
