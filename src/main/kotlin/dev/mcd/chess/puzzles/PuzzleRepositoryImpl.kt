@@ -24,7 +24,7 @@ class PuzzleRepositoryImpl : PuzzleRepository {
 
     override suspend fun getRandomPuzzle(ratingMin: Int, ratingMax: Int): Puzzle {
         val adjustedMin = max(allPuzzleRange.first, ratingMin)
-        val adjustedMax = min(allPuzzleRange.last, ratingMax)
+        val adjustedMax = max(adjustedMin, min(allPuzzleRange.last, ratingMax))
 
         return transaction {
             Puzzles.selectAll()
